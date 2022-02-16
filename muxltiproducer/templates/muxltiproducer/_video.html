@@ -1,0 +1,8 @@
+{% if asset.mux_properties %}
+{# note: add 'vjs-theme-city' to activate the city theme #}
+<video controls class='video-js vjs-big-play-centered' poster='{{ asset.mux_properties.poster_url }}'>
+    <source src='{{ asset.mux_properties.video_url }}' type='application/x-mpegurl'>
+</video>
+{% else %}
+<p>Video '{{ asset.mux_id }}' does not exist.</p>
+{% endif %}

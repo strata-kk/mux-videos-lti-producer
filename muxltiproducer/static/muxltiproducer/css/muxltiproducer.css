@@ -1,0 +1,6 @@
+video.video-js {
+    width: 100%;
+    height: unset;
+    max-width: 500px;
+    max-height: 500px;
+}

@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>{% block video %}Play video{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="{% static 'muxltiproducer/vendor/all.css' %}" rel="stylesheet">
+    <link href="{% static 'muxltiproducer/css/muxltiproducer.css' %}" rel="stylesheet">
+    <script src="{% static 'muxltiproducer/vendor/all.js' %}"></script>
+</head>
+
+<body>
+    <div class="container">
+        {% if request.lti_params.is_instructor %}
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <!-- <a class="nav-link active" aria-current="page" -->
+                <a class="nav-link" id="nav-student"
+                    href="{% url 'mux:launch' lti_session_id=request.lti_session_id %}">Student</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="nav-instructor"
+                    href="{% url 'mux:edit' lti_session_id=request.lti_session_id %}">Instructor</a>
+            </li>
+        </ul>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+    <script src="{% static 'muxltiproducer/js/muxltiproducer.js' %}"></script>
+    <script>
+        activateNavTab("nav-{% block active_nav %}student{% endblock %}");
+    </script>
+</body>
+
+</html>

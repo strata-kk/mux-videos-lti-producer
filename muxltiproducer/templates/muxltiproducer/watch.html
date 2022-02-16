@@ -1,0 +1,14 @@
+{% extends "muxltiproducer/_base.html" %}
+{% load static %}
+
+{% block content %}
+{% if asset %}
+<div class="row" style="max-width: 800px">
+    <div class="col">
+        {% include "muxltiproducer/_video.html" with asset=asset %}
+    </div>
+</div>
+{% else %}
+<p>Select a valid video identifier in your CMS.</p>
+{% endif %}
+{% endblock %}

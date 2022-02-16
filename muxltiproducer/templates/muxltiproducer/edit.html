@@ -1,0 +1,206 @@
+{% extends "muxltiproducer/_base.html" %}
+{% load static %}
+
+{% block active_nav%}instructor{% endblock %}
+{% block content %}
+
+<div>
+    <label for="video-file-input" class="form-label">Upload a new video file</label>
+    <form class="row mb-3 upload-video">
+        {% csrf_token %}
+        <div class="col-4">
+            <div class="row">
+                <div class="col">
+                    <input class="form-control" type="file" id="video-file-input"
+                        accept=".mp4,.avi,.mov,.mkv,.mpeg,.ogv">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;"></button>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 upload-status"></div>
+    </form>
+</div>
+
+{% for asset in assets %}
+{% include "muxltiproducer/_instructor_asset.html" with asset=asset %}
+{% endfor %}
+
+<script>
+    // Enable bootstrap tooltips
+    // https://getbootstrap.com/docs/5.1/components/tooltips/
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+    // Video upload form
+    function uploadVideo(file, options) {
+        /*
+        Fetch a direct upload url. Then, POST the video file there.
+        */
+        options = options || {};
+        let uploadFormData = new FormData();
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        uploadFormData.append('csrfmiddlewaretoken', csrftoken);
+        return fetch(
+            '{% url "mux:uploads" lti_session_id=request.lti_session_id %}',
+            { method: 'POST', body: uploadFormData }
+        ).then(res => {
+            return res.json()
+        }).then(data => {
+            uploadVideoTo(file, data.url, options);
+            watchUploadUrlStatus(data.id);
+        }).catch(e => {
+            if (options.onError) {
+                options.onError("Error while fetching an upload URL: " + e);
+            }
+        });
+    }
+    function uploadVideoTo(file, url, options) {
+        /*
+        https://docs.mux.com/guides/video/upload-files-directly
+        */
+        options = options || {};
+        const upload = UpChunk.createUpload({
+            endpoint: url,
+            file: file,
+            chunkSize: 5120, // Uploads the file in ~5mb chunks
+        });
+        // subscribe to events
+        upload.on('error', err => {
+            if (options.onError) {
+                options.onError(err.detail)
+            }
+        });
+        upload.on('offline', err => {
+            if (options.onOffline) {
+                options.onOffline(err.detail)
+            }
+        });
+        upload.on('progress', progress => {
+            if (options.onProgress) {
+                options.onProgress(progress.detail)
+            }
+        });
+        upload.on('success', err => {
+            if (options.onSuccess) {
+                options.onSuccess()
+            }
+        });
+    }
+
+    // Setup form
+    let uploadVideoFormElt = document.querySelector('form.upload-video');
+    let uploadInputElt = uploadVideoFormElt.querySelector('input[type="file"]');
+    let uploadButtonElt = uploadVideoFormElt.querySelector('button[type="submit"]');
+    let messageElt = uploadVideoFormElt.querySelector('.message');
+    let uploadStatusElt = uploadVideoFormElt.querySelector('.upload-status');
+    let uploadStatus = {
+        percent: null,
+        danger: null,
+        warning: null,
+        success: null
+    }
+
+    function showMessage(message, level) {
+        messageElt.innerHTML = "<div class='alert alert-" + level + "' role='alert'>" + message + "</div>";
+        messageElt.hidden = false;
+    }
+    function onReadyToSelect() {
+        uploadButtonElt.hidden = true;
+        checkReadyToUpload();
+    }
+    function checkReadyToUpload() {
+        if (uploadInputElt.files.length > 0) {
+            onReadyToUpload();
+        }
+    }
+    function onReadyToUpload() {
+        uploadButtonElt.innerHTML = '<i class="bi bi-upload"></i> Upload';
+        uploadButtonElt.hidden = false;
+    }
+    function onUploadProgress(value) {
+        uploadStatus.percent = Math.floor(value);
+        uploadStatus.error = null;
+        uploadStatus.warning = null;
+        uploadStatus.success = null;
+        updateUploadStatus();
+        if (value >= 100) {
+            // We fire this event again here because otherwise the success message might be deleted by extra progress event.
+            onUploadSuccess();
+        }
+    }
+    function onUploadOffline() {
+        uploadStatus.warning = "Your have been disconnected from the Internet. Waiting to reconnect...";
+        updateUploadStatus();
+    }
+    function onUploadError(message) {
+        uploadStatus.danger = "<strong>There was an error during the upload.</strong> " + message;
+        updateUploadStatus();
+        onReadyToSelect();
+    }
+    function onUploadSuccess() {
+        uploadStatus.success = "Video successfully uploaded. Waiting for processing...";
+        updateUploadStatus();
+    }
+    function updateUploadStatus() {
+        if (uploadStatus.percent !== null) {
+            uploadStatusElt.innerHTML = "<p>Uploading... " + uploadStatus.percent + "%</p>";
+            uploadStatusElt.innerHTML += "<div class='progress mb-3'><div class='progress-bar' role='progressbar' style='width: " + uploadStatus.percent + "%;' aria-valuenow='" + uploadStatus.percent + "' aria-valuemin='0' aria-valuemax='100'>" + uploadStatus.percent + "%</div></div>"
+        }
+        ["success", "warning", "error"].forEach(level => {
+            if (uploadStatus[level]) {
+                uploadStatusElt.innerHTML += "<div class='alert alert-" + level + "' role='alert'>" + uploadStatus[level] + "</div>";
+            }
+        })
+    }
+    function watchUploadUrlStatus(uploadUrlId) {
+        fetch(
+            '{% url "mux:uploads" lti_session_id=request.lti_session_id %}?' + new URLSearchParams({
+                id: uploadUrlId
+            }),
+        ).then(res => res.json()).then(data => {
+            if (data.status === "asset_created") {
+                uploadStatus.success = "Video successfully processed. <a href='{% url 'mux:edit' lti_session_id=request.lti_session_id %}'>Reload this page</a> to view the updated assets.";
+                updateUploadStatus();
+                onReadyToSelect();
+            } else {
+                setTimeout(() => watchUploadUrlStatus(uploadUrlId), 10000);
+            }
+        }).catch(e => {
+            setTimeout(() => watchUploadUrlStatus(uploadUrlId), 10000);
+        })
+    };
+    onReadyToSelect();
+    uploadInputElt.addEventListener('change', function () {
+        checkReadyToUpload();
+    });
+    uploadVideoFormElt.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (uploadInputElt.files.length === 0) {
+            return;
+        }
+
+        uploadButtonElt.innerHTML = 'Uploading...';
+        uploadButtonElt.hidden = false;
+        uploadButtonElt.disabled = true;
+        uploadStatus.percent = 0;
+        uploadStatus.error = null;
+        uploadStatus.warning = null;
+        uploadStatus.success = null;
+        updateUploadStatus();
+
+        const file = uploadInputElt.files[0];
+        uploadVideo(file, {
+            onProgress: onUploadProgress,
+            onError: onUploadError,
+            onOffline: onUploadOffline,
+            onSuccess: onUploadSuccess
+        });
+    });
+</script>
+{% endblock %}
