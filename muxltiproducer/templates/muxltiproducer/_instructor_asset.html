@@ -46,13 +46,27 @@
         {% endif %}
         <hr>
 
-        <h6>Subtitles</h6>
+        <h5>Subtitles</h5>
         {# Subtitles #}
         {% if asset.mux_properties.subtitle_tracks %}
-        <div class='row'>
-            <p>Subtitles: {% for track in asset.mux_properties.subtitle_tracks %}{{ track.name }}{% if not forloop.last %} / {% endif %}{% endfor %}</p>
-        </div>
+        <ul class="list-group list-group-flush">
+            {% for track in asset.mux_properties.subtitle_tracks %}
+            <li class="list-group-item">
+                <div class="row">
+                    <div class="col-3"><p>{{ track.name }}</p></div>
+                    <div class="col-9">
+                        <form method='POST' action='{% url "mux:delete_subtitles" lti_session_id=request.lti_session_id mux_id=asset.mux_id track_id=track.id %}'>
+                            {% csrf_token %}
+                            <button type='submit' class='btn btn-outline-danger'>Delete</button>
+                        </form>
+                    </div>
+                </div>
+
+            </li>
+            {% endfor %}
+        </ul>
         {% endif %}
+        <h6>Upload new subtitles</h6>
         <form class='row mb-3' method='POST'
             enctype="multipart/form-data"
             action='{% url "mux:subtitles" lti_session_id=request.lti_session_id mux_id=asset.mux_id %}'>

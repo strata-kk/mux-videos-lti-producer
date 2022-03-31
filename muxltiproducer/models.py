@@ -31,10 +31,6 @@ class Asset(models.Model):
     lti_context = models.ForeignKey(LtiContext, models.CASCADE)
     objects = AssetManager()
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self._mux_properties = self.UNDEFINED
-
     @property
     def mux_properties(self) -> t.Optional["MuxAssetProperties"]:
         """
@@ -55,17 +51,22 @@ class MuxAssetProperties:
         Load the corresponding asset from the Mux API.
 
         Return None if the object could not be found.
-
-        Results are stored in the lti_apps cache with keys prefixed by
-        "mux:assets:". Pass `no_cache=True` to bypass the cache.
-
-        See docs: https://docs.mux.com/api-reference/video#operation/get-asset
         """
         data = cls.load_data(mux_id)
         return cls(data) if data else None
 
     @staticmethod
     def load_data(mux_id, no_cache=False) -> t.Optional[t.Dict[str, t.Any]]:
+        """
+        Load the corresponding asset from the Mux API.
+
+        Return None if the object could not be found.
+
+        Results are stored in the lti_apps cache with keys prefixed by
+        "mux:assets:". Pass `no_cache=True` to bypass the cache.
+
+        See docs: https://docs.mux.com/api-reference/video#operation/get-asset
+        """
         absent = object()
         cache_key = f"mux:assets:{mux_id}"
         cache = caches["lti_apps"]
