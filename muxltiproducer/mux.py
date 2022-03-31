@@ -7,6 +7,7 @@ from time import time
 
 import jwt
 import mux_python as mux
+from mux_python.exceptions import NotFoundException
 from django.conf import settings
 
 DIRECT_UPLOAD_VALIDITY_SECONDS = getattr(
@@ -58,7 +59,7 @@ def get_asset(mux_asset_id) -> t.Optional[t.Dict[str, t.Any]]:
     """
     try:
         asset = get_assets_client().get_asset(mux_asset_id)
-    except mux.exceptions.NotFoundException:
+    except NotFoundException:
         return None
     return asset.data.to_dict()
 

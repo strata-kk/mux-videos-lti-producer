@@ -31,16 +31,47 @@
             </div>
         </div>
         {% endif %}
-        {% if asset.mux_properties.subtitle_tracks %}
+        {% if can_delete_assets %}
         <div class='row'>
-            <p>Subtitles: {% for track in asset.mux_properties.subtitle_tracks %}{{ track.name }}{% if not forloop.last %} / {% endif %}{% endfor %}</p>
+            <div class='col-3'>
+                <p><i class="bi bi-exclamation-triangle"></i> Danger zone</p>
+            </div>
+            <div class='col-3'>
+                <form method='POST' action='{% url "mux:delete" lti_session_id=request.lti_session_id mux_id=asset.mux_id %}'>
+                    {% csrf_token %}
+                    <button type='submit' class='btn btn-outline-danger'>Delete video</button>
+                </form>
+            </div>
         </div>
         {% endif %}
+        <hr>
+
+        <h5>Subtitles</h5>
+        {# Subtitles #}
+        {% if asset.mux_properties.subtitle_tracks %}
+        <ul class="list-group list-group-flush">
+            {% for track in asset.mux_properties.subtitle_tracks %}
+            <li class="list-group-item">
+                <div class="row">
+                    <div class="col-3"><p>{{ track.name }}</p></div>
+                    <div class="col-9">
+                        <form method='POST' action='{% url "mux:delete_subtitles" lti_session_id=request.lti_session_id mux_id=asset.mux_id track_id=track.id %}'>
+                            {% csrf_token %}
+                            <button type='submit' class='btn btn-outline-danger'>Delete</button>
+                        </form>
+                    </div>
+                </div>
+
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <h6>Upload new subtitles</h6>
         <form class='row mb-3' method='POST'
             enctype="multipart/form-data"
             action='{% url "mux:subtitles" lti_session_id=request.lti_session_id mux_id=asset.mux_id %}'>
             {% csrf_token %}
-            <div class='col-auto'>
+            <div class='col-6'>
                 <label for='filename' class='form-label visually-hidden'>Upload new subtitles</label>
                 <input class='form-control' type='file' accept='.vtt,.srt' name='file' required>
             </div>
@@ -51,21 +82,12 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class='col-auto'>
-                <button class='btn btn-outline-info' type='submit'>Upload subtitles</button>
+            <div class='col-3'>
+                <button class='btn btn-outline-info' type='submit'>Upload</button>
             </div>
         </form>
         {% endif %} {# if asset.mux_properties #}
-        {% if can_delete_assets %}
-        <div class='row'>
-            <div class='col'>
-                <form method='POST' action='{% url "mux:delete" lti_session_id=request.lti_session_id mux_id=asset.mux_id %}'>
-                    {% csrf_token %}
-                    <button type='submit' class='btn btn-outline-danger'>Delete</button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
     </div>
 
 </div>
+<hr>

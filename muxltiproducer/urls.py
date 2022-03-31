@@ -25,6 +25,11 @@ urlpatterns = [
         name="subtitles",
     ),
     path(
+        "subtitles/<str:lti_session_id>/<str:mux_id>/<str:track_id>",
+        views.delete_subtitles,
+        name="delete_subtitles",
+    ),
+    path(
         "uploads/<str:lti_session_id>",
         views.uploads,
         name="uploads",

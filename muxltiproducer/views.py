@@ -2,8 +2,7 @@ import json
 
 from django.conf import settings
 from django.conf.global_settings import LANGUAGES
-from django.http import (Http404, HttpResponse, HttpResponseForbidden,
-                         JsonResponse)
+from django.http import Http404, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
@@ -122,6 +121,27 @@ def subtitles(request: ltiviews.HttpLtiRequest, mux_id: str) -> HttpResponse:
     # Update asset cache one more time to reflect changes in the frontend
     asset.mux_properties.update()
 
+    return redirect("mux:edit", lti_session_id=request.lti_session_id)
+
+
+@ltiviews.view
+@ltiviews.instructor_required
+@require_POST
+def delete_subtitles(
+    request: ltiviews.HttpLtiRequest, mux_id: str, track_id: str
+) -> HttpResponse:
+    try:
+        asset = models.Asset.objects.filter_visible(request.lti_params.context_id).get(
+            mux_id=mux_id
+        )
+    except models.Asset.DoesNotExist as e:
+        raise Http404 from e
+    mux_assets_client = mux.get_assets_client()
+    try:
+        mux_assets_client.delete_asset_track(mux_id, track_id)
+    except mux.NotFoundException:
+        pass
+    asset.mux_properties.update()
     return redirect("mux:edit", lti_session_id=request.lti_session_id)
 
 
