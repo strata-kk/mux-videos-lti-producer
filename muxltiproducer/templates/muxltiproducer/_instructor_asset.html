@@ -31,6 +31,23 @@
             </div>
         </div>
         {% endif %}
+        {% if can_delete_assets %}
+        <div class='row'>
+            <div class='col-3'>
+                <p><i class="bi bi-exclamation-triangle"></i> Danger zone</p>
+            </div>
+            <div class='col-3'>
+                <form method='POST' action='{% url "mux:delete" lti_session_id=request.lti_session_id mux_id=asset.mux_id %}'>
+                    {% csrf_token %}
+                    <button type='submit' class='btn btn-outline-danger'>Delete video</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        <hr>
+
+        <h6>Subtitles</h6>
+        {# Subtitles #}
         {% if asset.mux_properties.subtitle_tracks %}
         <div class='row'>
             <p>Subtitles: {% for track in asset.mux_properties.subtitle_tracks %}{{ track.name }}{% if not forloop.last %} / {% endif %}{% endfor %}</p>
@@ -56,16 +73,7 @@
             </div>
         </form>
         {% endif %} {# if asset.mux_properties #}
-        {% if can_delete_assets %}
-        <div class='row'>
-            <div class='col'>
-                <form method='POST' action='{% url "mux:delete" lti_session_id=request.lti_session_id mux_id=asset.mux_id %}'>
-                    {% csrf_token %}
-                    <button type='submit' class='btn btn-outline-danger'>Delete</button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
     </div>
 
 </div>
+<hr>
