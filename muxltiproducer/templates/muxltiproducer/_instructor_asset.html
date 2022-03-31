@@ -40,7 +40,7 @@
             enctype="multipart/form-data"
             action='{% url "mux:subtitles" lti_session_id=request.lti_session_id mux_id=asset.mux_id %}'>
             {% csrf_token %}
-            <div class='col-auto'>
+            <div class='col-6'>
                 <label for='filename' class='form-label visually-hidden'>Upload new subtitles</label>
                 <input class='form-control' type='file' accept='.vtt,.srt' name='file' required>
             </div>
@@ -51,8 +51,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class='col-auto'>
-                <button class='btn btn-outline-info' type='submit'>Upload subtitles</button>
+            <div class='col-3'>
+                <button class='btn btn-outline-info' type='submit'>Upload</button>
             </div>
         </form>
         {% endif %} {# if asset.mux_properties #}
