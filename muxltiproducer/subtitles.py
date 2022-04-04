@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from django.core.files.storage import DefaultStorage
 from django.utils.timezone import now
+from storages.backends.s3boto3 import S3Boto3Storage
 
 MEDIA_FOLDER = "mux/subtitles"
 
@@ -31,7 +32,10 @@ def delete_expired():
     _folders, files = storage.listdir(MEDIA_FOLDER)
     for filename in files:
         path = f"{MEDIA_FOLDER}/{filename}"
-        created_at = storage.get_created_time(path)
+        if isinstance(storage, S3Boto3Storage):
+            created_at = storage.get_modified_time(path)
+        else:
+            created_at = storage.get_created_time(path)
         if created_at < now() - timedelta(hours=1):
             storage.delete(path)
             logger.info("Deleted subtitle file: %s", path)
